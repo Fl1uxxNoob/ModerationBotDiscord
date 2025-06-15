@@ -24,6 +24,23 @@ class Moderation(commands.Cog):
         """Controlla se l'utente ha i permessi di moderazione"""
         return interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.moderate_members
 
+    def is_user_muted(self, member: discord.Member) -> bool:
+        """Controlla se un utente è già mutato (timeout Discord o ruolo Muted)"""
+        # Controlla timeout Discord
+        if member.timed_out_until and member.timed_out_until > discord.utils.utcnow():
+            return True
+        
+        # Controlla ruolo Muted
+        try:
+            muted_role = self.get_role(member.guild, self.config['roles']['muted'])
+            if muted_role in member.roles:
+                return True
+        except ValueError:
+            # Ruolo Muted non esiste
+            pass
+        
+        return False
+
     @app_commands.command(name='mute', description='Muta un utente per un periodo specificato')
     @app_commands.describe(
         member='Utente da mutare',
@@ -41,20 +58,44 @@ class Moderation(commands.Cog):
             await interaction.response.send_message("❌ Non puoi mutare questo utente!", ephemeral=True)
             return
 
+        # Non permettere di mutare se stessi
+        if member == interaction.user:
+            await interaction.response.send_message("❌ Non puoi mutare te stesso!", ephemeral=True)
+            return
+
+        # Non permettere di mutare bot
+        if member.bot:
+            await interaction.response.send_message("❌ Non puoi mutare un bot!", ephemeral=True)
+            return
+
+        # ✅ NUOVO: Controlla se l'utente è già mutato
+        if self.is_user_muted(member):
+            await interaction.response.send_message(f"❌ {member.mention} è già mutato!", ephemeral=True)
+            return
+
+        # Validazione durata
+        if duration <= 0:
+            await interaction.response.send_message("❌ La durata deve essere maggiore di 0 minuti!", ephemeral=True)
+            return
+
+        if duration > 40320:  # 28 giorni in minuti (limite Discord)
+            await interaction.response.send_message("❌ La durata massima è di 28 giorni (40320 minuti)!", ephemeral=True)
+            return
+
         try:
-            # CORREZIONE: Usa discord.utils.utcnow() per datetime timezone-aware
+            # Usa discord.utils.utcnow() per datetime timezone-aware
             timeout_until = discord.utils.utcnow() + timedelta(minutes=duration)
             await member.timeout(timeout_until, reason=reason)
             
-            # CORREZIONE: Assegna anche il ruolo "Muted" se esiste
+            # Assegna anche il ruolo "Muted" se esiste
             muted_role = None
             try:
                 muted_role = self.get_role(interaction.guild, self.config['roles']['muted'])
                 if muted_role not in member.roles:
-                    await member.add_roles(muted_role, reason=f"Mutato da {interaction.user}")
+                    await member.add_roles(muted_role, reason=f"Mutado da {interaction.user}")
                     print(f"🔇 Aggiunto ruolo {muted_role.name} a {member}")
                     
-                    # NUOVO: Programma la rimozione automatica del ruolo
+                    # Programma la rimozione automatica del ruolo
                     unmute_time = discord.utils.utcnow() + timedelta(minutes=duration)
                     self.temp_mutes[member.id] = {
                         'guild': interaction.guild.id,
@@ -78,6 +119,20 @@ class Moderation(commands.Cog):
             )
             await interaction.response.send_message(msg)
             
+            # Invia DM all'utente mutato
+            try:
+                embed = discord.Embed(
+                    title="Sei stato mutato",
+                    description=f"Sei stato mutato in **{interaction.guild.name}**",
+                    color=discord.Color.orange()
+                )
+                embed.add_field(name="Durata", value=f"{duration} minuti", inline=False)
+                embed.add_field(name="Motivo", value=reason, inline=False)
+                embed.add_field(name="Moderatore", value=interaction.user.mention, inline=False)
+                await member.send(embed=embed)
+            except:
+                pass  # Ignora se non può inviare DM
+            
             # Log dell'azione
             print(f"🔇 {member} mutato da {interaction.user} per {duration} minuti. Motivo: {reason}")
             
@@ -93,11 +148,16 @@ class Moderation(commands.Cog):
             await interaction.response.send_message("❌ Non hai i permessi per usare questo comando!", ephemeral=True)
             return
 
+        # ✅ NUOVO: Controlla se l'utente è già smutato
+        if not self.is_user_muted(member):
+            await interaction.response.send_message(f"❌ {member.mention} non è mutato!", ephemeral=True)
+            return
+
         try:
-            # CORREZIONE: Rimuove il timeout di Discord
+            # Rimuove il timeout di Discord
             await member.timeout(None)
             
-            # CORREZIONE: Rimuove anche il ruolo "Muted" se presente
+            # Rimuove anche il ruolo "Muted" se presente
             try:
                 muted_role = self.get_role(interaction.guild, self.config['roles']['muted'])
                 if muted_role in member.roles:
@@ -109,12 +169,25 @@ class Moderation(commands.Cog):
             except Exception as role_error:
                 print(f"⚠️ Errore nel rimuovere il ruolo muted: {role_error}")
             
-            # NUOVO: Rimuovi dal dizionario dei mute temporanei se presente
+            # Rimuovi dal dizionario dei mute temporanei se presente
             if member.id in self.temp_mutes:
                 del self.temp_mutes[member.id]
                 print(f"🔊 Rimosso {member} dai mute temporanei")
             
             await interaction.response.send_message(f"✅ {member.mention} è stato smutato.")
+            
+            # Invia DM all'utente smutato
+            try:
+                embed = discord.Embed(
+                    title="Sei stato smutato",
+                    description=f"Il tuo mute in **{interaction.guild.name}** è stato rimosso",
+                    color=discord.Color.green()
+                )
+                embed.add_field(name="Moderatore", value=interaction.user.mention, inline=False)
+                await member.send(embed=embed)
+            except:
+                pass  # Ignora se non può inviare DM
+            
             print(f"🔊 {member} smutato da {interaction.user}")
             
         except discord.Forbidden:
@@ -136,6 +209,16 @@ class Moderation(commands.Cog):
         # Controllo ruoli
         if member.top_role >= interaction.user.top_role and interaction.user != interaction.guild.owner:
             await interaction.response.send_message("❌ Non puoi espellere questo utente!", ephemeral=True)
+            return
+
+        # Non permettere di espellere se stessi
+        if member == interaction.user:
+            await interaction.response.send_message("❌ Non puoi espellere te stesso!", ephemeral=True)
+            return
+
+        # Non permettere di espellere bot
+        if member.bot:
+            await interaction.response.send_message("❌ Non puoi espellere un bot!", ephemeral=True)
             return
 
         try:
@@ -184,7 +267,32 @@ class Moderation(commands.Cog):
             await interaction.response.send_message("❌ Non puoi bannare questo utente!", ephemeral=True)
             return
 
+        # Non permettere di bannare se stessi
+        if member == interaction.user:
+            await interaction.response.send_message("❌ Non puoi bannare te stesso!", ephemeral=True)
+            return
+
+        # Non permettere di bannare bot
+        if member.bot:
+            await interaction.response.send_message("❌ Non puoi bannare un bot!", ephemeral=True)
+            return
+
+        # Validazione durata
+        if duration < 0:
+            await interaction.response.send_message("❌ La durata non può essere negativa!", ephemeral=True)
+            return
+
         try:
+            # Controlla se l'utente è già bannato
+            try:
+                ban_entry = await interaction.guild.fetch_ban(member)
+                if ban_entry:
+                    await interaction.response.send_message(f"❌ {member.mention} è già bannato!", ephemeral=True)
+                    return
+            except discord.NotFound:
+                # L'utente non è bannato, continua
+                pass
+
             # Invia DM all'utente prima del ban
             try:
                 embed = discord.Embed(
@@ -203,7 +311,7 @@ class Moderation(commands.Cog):
             
             # Programma l'unban se temporaneo
             if duration > 0:
-                # CORREZIONE: Usa discord.utils.utcnow() anche qui
+                # Usa discord.utils.utcnow()
                 unban_time = discord.utils.utcnow() + timedelta(days=duration)
                 self.temp_bans[member.id] = {
                     'guild': interaction.guild.id,
@@ -270,13 +378,21 @@ class Moderation(commands.Cog):
             return
 
         try:
-            user_id = int(user_id)
-            user = await self.bot.fetch_user(user_id)
+            user_id_int = int(user_id)
+            
+            # Controlla se l'utente è effettivamente bannato
+            try:
+                ban_entry = await interaction.guild.fetch_ban(discord.Object(id=user_id_int))
+            except discord.NotFound:
+                await interaction.response.send_message("❌ Utente non trovato nella lista dei ban!", ephemeral=True)
+                return
+            
+            user = await self.bot.fetch_user(user_id_int)
             await interaction.guild.unban(user, reason=f"Sbannato da {interaction.user}")
             
             # Rimuovi dal dizionario dei ban temporanei se presente
-            if user_id in self.temp_bans:
-                del self.temp_bans[user_id]
+            if user_id_int in self.temp_bans:
+                del self.temp_bans[user_id_int]
             
             await interaction.response.send_message(f"✅ {user.mention} è stato sbannato.")
             print(f"🔓 {user} sbannato da {interaction.user}")
@@ -284,7 +400,7 @@ class Moderation(commands.Cog):
         except ValueError:
             await interaction.response.send_message("❌ ID utente non valido!", ephemeral=True)
         except discord.NotFound:
-            await interaction.response.send_message("❌ Utente non trovato o non bannato!", ephemeral=True)
+            await interaction.response.send_message("❌ Utente non trovato!", ephemeral=True)
         except Exception as e:
             await interaction.response.send_message(f"❌ Errore: {str(e)}", ephemeral=True)
 
