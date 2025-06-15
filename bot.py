@@ -5,7 +5,7 @@ from database import init_db
 
 # Load config
 def load_config():
-    with open('config.yml', 'r') as f:
+    with open('config.yml', 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 config = load_config()
@@ -28,7 +28,8 @@ for cog in cogs:
 
 @bot.event
 async def on_ready():
+    await bot.tree.sync()  # sincronizza gli slash command globali
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
-
+    print('Slash commands sincronizzati!')
+    
 bot.run(token)

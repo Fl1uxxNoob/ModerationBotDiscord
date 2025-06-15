@@ -1,5 +1,5 @@
 # Bot token
-token: "YOUR_BOT_TOKEN"
+token: "BOT_TOKEN_HERE"
 
 # Prefix/messages
 messages:
