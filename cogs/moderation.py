@@ -8,7 +8,7 @@ import asyncio
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        with open('config.yml', 'r', encoding='utf-8') as f:  # Aggiunto encoding='utf-8'
+        with open('config.yml', 'r', encoding='utf-8') as f:
             self.config = yaml.safe_load(f)
         self.temp_bans = {}  # Dizionario per gestire i ban temporanei
         self.temp_mutes = {}  # Dizionario per gestire i mute temporanei
@@ -42,9 +42,33 @@ class Moderation(commands.Cog):
             return
 
         try:
-            # Usa il timeout di Discord (più efficace)
-            timeout_until = datetime.now() + timedelta(minutes=duration)
+            # CORREZIONE: Usa discord.utils.utcnow() per datetime timezone-aware
+            timeout_until = discord.utils.utcnow() + timedelta(minutes=duration)
             await member.timeout(timeout_until, reason=reason)
+            
+            # CORREZIONE: Assegna anche il ruolo "Muted" se esiste
+            muted_role = None
+            try:
+                muted_role = self.get_role(interaction.guild, self.config['roles']['muted'])
+                if muted_role not in member.roles:
+                    await member.add_roles(muted_role, reason=f"Mutato da {interaction.user}")
+                    print(f"🔇 Aggiunto ruolo {muted_role.name} a {member}")
+                    
+                    # NUOVO: Programma la rimozione automatica del ruolo
+                    unmute_time = discord.utils.utcnow() + timedelta(minutes=duration)
+                    self.temp_mutes[member.id] = {
+                        'guild': interaction.guild.id,
+                        'unmute_time': unmute_time,
+                        'role': muted_role.id
+                    }
+                    # Avvia task per rimuovere il ruolo automaticamente
+                    asyncio.create_task(self.schedule_unmute(member.id, duration * 60))  # Secondi
+                    
+            except ValueError:
+                # Il ruolo "Muted" non esiste, usa solo il timeout
+                print(f"⚠️ Ruolo 'Muted' non trovato, uso solo timeout per {member}")
+            except Exception as role_error:
+                print(f"⚠️ Errore nell'assegnare il ruolo muted: {role_error}")
             
             # Messaggio di conferma
             msg = self.config['messages']['mute_success'].format(
@@ -70,9 +94,29 @@ class Moderation(commands.Cog):
             return
 
         try:
-            await member.timeout(None)  # Rimuove il timeout
+            # CORREZIONE: Rimuove il timeout di Discord
+            await member.timeout(None)
+            
+            # CORREZIONE: Rimuove anche il ruolo "Muted" se presente
+            try:
+                muted_role = self.get_role(interaction.guild, self.config['roles']['muted'])
+                if muted_role in member.roles:
+                    await member.remove_roles(muted_role, reason=f"Smutato da {interaction.user}")
+                    print(f"🔊 Rimosso ruolo {muted_role.name} da {member}")
+            except ValueError:
+                # Il ruolo "Muted" non esiste, ignora
+                pass
+            except Exception as role_error:
+                print(f"⚠️ Errore nel rimuovere il ruolo muted: {role_error}")
+            
+            # NUOVO: Rimuovi dal dizionario dei mute temporanei se presente
+            if member.id in self.temp_mutes:
+                del self.temp_mutes[member.id]
+                print(f"🔊 Rimosso {member} dai mute temporanei")
+            
             await interaction.response.send_message(f"✅ {member.mention} è stato smutato.")
             print(f"🔊 {member} smutato da {interaction.user}")
+            
         except discord.Forbidden:
             await interaction.response.send_message("❌ Non ho i permessi per smutare questo utente!", ephemeral=True)
         except Exception as e:
@@ -159,7 +203,8 @@ class Moderation(commands.Cog):
             
             # Programma l'unban se temporaneo
             if duration > 0:
-                unban_time = datetime.now() + timedelta(days=duration)
+                # CORREZIONE: Usa discord.utils.utcnow() anche qui
+                unban_time = discord.utils.utcnow() + timedelta(days=duration)
                 self.temp_bans[member.id] = {
                     'guild': interaction.guild.id,
                     'unban_time': unban_time,
@@ -198,6 +243,24 @@ class Moderation(commands.Cog):
                 except:
                     print(f"❌ Errore nell'unban automatico di {user_id}")
             del self.temp_bans[user_id]
+
+    async def schedule_unmute(self, user_id: int, seconds: int):
+        """Programma la rimozione automatica del ruolo muted"""
+        await asyncio.sleep(seconds)
+        if user_id in self.temp_mutes:
+            guild_id = self.temp_mutes[user_id]['guild']
+            role_id = self.temp_mutes[user_id]['role']
+            guild = self.bot.get_guild(guild_id)
+            if guild:
+                member = guild.get_member(user_id)
+                role = guild.get_role(role_id)
+                if member and role and role in member.roles:
+                    try:
+                        await member.remove_roles(role, reason="Mute temporaneo scaduto")
+                        print(f"🔊 Ruolo {role.name} rimosso automaticamente da {member}")
+                    except Exception as e:
+                        print(f"❌ Errore nella rimozione automatica del ruolo muted da {user_id}: {e}")
+            del self.temp_mutes[user_id]
 
     @app_commands.command(name='unban', description='Rimuove il ban da un utente')
     @app_commands.describe(user_id='ID dell\'utente da sbannare')
