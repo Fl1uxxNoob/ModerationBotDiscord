@@ -50,16 +50,10 @@ async def load_extensions():
 async def on_ready():
     print(f'🤖 Bot avviato come {bot.user} (ID: {bot.user.id})')
     
-    # Sincronizza comandi slash
+    # Sincronizza comandi slash globalmente
     try:
-        # Per sviluppo: sincronizza per una guild specifica (più veloce)
-        # guild = discord.Object(id=YOUR_GUILD_ID)  # Sostituisci con l'ID del tuo server
-        # bot.tree.copy_global_to(guild=guild)
-        # synced = await bot.tree.sync(guild=guild)
-        
-        # Per produzione: sincronizza globalmente
         synced = await bot.tree.sync()
-        print(f"✅ Sincronizzati {len(synced)} comandi slash")
+        print(f"✅ Sincronizzati {len(synced)} comandi slash globalmente")
     except Exception as e:
         print(f"❌ Errore nella sincronizzazione: {e}")
 
