@@ -7,7 +7,7 @@ import yaml
 class Warnings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        with open('config.yml', 'r') as f:
+        with open('config.yml', 'r', encoding='utf-8') as f:  # Aggiunto encoding='utf-8'
             self.config = yaml.safe_load(f)
 
     @app_commands.command(name='warn')

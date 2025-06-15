@@ -7,7 +7,7 @@ from database import add_warning, get_warnings
 class AutoMod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        with open('config.yml', 'r') as f:
+        with open('config.yml', 'r', encoding='utf-8') as f:  # Aggiunto encoding='utf-8'
             self.config = yaml.safe_load(f)
         self.banned_words = set(self.config['automod']['banned_words'])
         self.warn_threshold = self.config['automod']['warn_threshold']

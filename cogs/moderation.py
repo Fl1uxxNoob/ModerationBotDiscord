@@ -8,7 +8,7 @@ import asyncio
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        with open('config.yml', 'r') as f:
+        with open('config.yml', 'r', encoding='utf-8') as f:  # Aggiunto encoding='utf-8'
             self.config = yaml.safe_load(f)
         self.temp_bans = {}  # Dizionario per gestire i ban temporanei
         self.temp_mutes = {}  # Dizionario per gestire i mute temporanei
