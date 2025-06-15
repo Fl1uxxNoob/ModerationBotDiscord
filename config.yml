@@ -1,0 +1,22 @@
+# Bot token
+token: "YOUR_BOT_TOKEN"
+
+# Prefix/messages
+messages:
+  mute_success: "🔇 {member} è stato mutato per {duration}. Motivo: {reason}"
+  kick_success: "👢 {member} è stato espulso. Motivo: {reason}"
+  ban_success: "⛔ {member} è stato bannato per {duration}. Motivo: {reason}"
+  warn_message: "⚠️ {member} hai ricevuto un avvertimento. Motivo: {reason}. Avvertimenti totali: {count}"
+  automod_warn: "⚠️ {member}, linguaggio non consentito! Avvertimento {count}/{max_warns}."
+  automod_mute: "🔇 {member} mutato automaticamente dopo {count} avvertimenti."
+
+# Automoderation settings
+automod:
+  banned_words:
+    - "badword1"
+    - "badword2"
+  warn_threshold: 2
+
+# Role names
+roles:
+  muted: "Muted"
