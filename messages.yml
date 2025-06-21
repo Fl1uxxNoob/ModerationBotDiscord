@@ -1,0 +1,159 @@
+# Discord Moderation Bot Messages
+
+# Welcome messages
+welcome:
+  description: "Thank you for adding me to your server! I'm here to help with moderation."
+  getting_started: "Use `/setup` to configure me for your server. Use `/help` to see all available commands."
+
+# Command responses
+commands:
+  # General
+  success: "✅ Command executed successfully."
+  error: "❌ An error occurred while executing the command."
+  no_permission: "❌ You don't have permission to use this command."
+  user_not_found: "❌ User not found."
+  invalid_duration: "❌ Invalid duration format. Use examples: 1h, 30m, 1d"
+  
+  # Moderation
+  ban:
+    success: "🔨 **{user}** has been banned from the server."
+    success_temp: "🔨 **{user}** has been temporarily banned for {duration}."
+    dm: "You have been banned from **{guild}**.\nReason: {reason}"
+    already_banned: "❌ User is already banned."
+    cannot_ban_self: "❌ You cannot ban yourself."
+    cannot_ban_bot: "❌ You cannot ban bots."
+    higher_role: "❌ Cannot ban user with higher or equal role."
+  
+  unban:
+    success: "✅ **{user}** has been unbanned."
+    not_banned: "❌ User is not banned."
+  
+  kick:
+    success: "👢 **{user}** has been kicked from the server."
+    dm: "You have been kicked from **{guild}**.\nReason: {reason}"
+    cannot_kick_self: "❌ You cannot kick yourself."
+    higher_role: "❌ Cannot kick user with higher or equal role."
+  
+  timeout:
+    success: "🔇 **{user}** has been timed out for {duration}."
+    success_remove: "✅ Timeout removed for **{user}**."
+    dm: "You have been timed out in **{guild}** for {duration}.\nReason: {reason}"
+    already_timed_out: "❌ User is already timed out."
+    not_timed_out: "❌ User is not timed out."
+    max_duration: "❌ Maximum timeout duration is 28 days."
+  
+  warn:
+    success: "⚠️ **{user}** has been warned. ({warnings}/{max_warnings})"
+    dm: "You have been warned in **{guild}**.\nReason: {reason}\nWarnings: {warnings}/{max_warnings}"
+    max_warnings: "⚠️ **{user}** has reached maximum warnings and will be automatically punished."
+  
+  unwarn:
+    success: "✅ Warning removed from **{user}**."
+    no_warnings: "❌ User has no warnings to remove."
+  
+  purge:
+    success: "🗑️ Deleted {count} messages."
+    no_messages: "❌ No messages found to delete."
+    limit_exceeded: "❌ Cannot delete more than 100 messages at once."
+  
+  lock:
+    success: "🔒 Channel has been locked."
+    already_locked: "❌ Channel is already locked."
+  
+  unlock:
+    success: "🔓 Channel has been unlocked."
+    not_locked: "❌ Channel is not locked."
+
+# History and logging
+history:
+  no_history: "No moderation history found for this user."
+  user_info: "📋 **Moderation History for {user}**"
+  total_actions: "Total Actions: {count}"
+  
+log:
+  message_delete:
+    title: "Message Deleted"
+    author: "Author: {author}"
+    channel: "Channel: {channel}"
+    content: "Content: {content}"
+  
+  message_edit:
+    title: "Message Edited"
+    author: "Author: {author}"
+    channel: "Channel: {channel}"
+    before: "Before: {before}"
+    after: "After: {after}"
+  
+  member_join:
+    title: "Member Joined"
+    user: "User: {user}"
+    account_created: "Account Created: {created}"
+  
+  member_leave:
+    title: "Member Left"
+    user: "User: {user}"
+    roles: "Roles: {roles}"
+  
+  member_ban:
+    title: "Member Banned"
+    user: "User: {user}"
+    moderator: "Moderator: {moderator}"
+    reason: "Reason: {reason}"
+  
+  member_unban:
+    title: "Member Unbanned"
+    user: "User: {user}"
+    moderator: "Moderator: {moderator}"
+
+# Auto-moderation
+automod:
+  spam:
+    warning: "⚠️ **{user}**, please slow down your messages!"
+    punishment: "🚫 **{user}** has been punished for spam."
+  
+  caps:
+    warning: "⚠️ **{user}**, please don't use excessive caps!"
+  
+  bad_words:
+    warning: "⚠️ **{user}**, please watch your language!"
+  
+  invite_links:
+    warning: "⚠️ **{user}**, invite links are not allowed!"
+
+# Setup and configuration
+setup:
+  success: "✅ Bot has been configured successfully!"
+  log_channel_created: "📋 Created mod-logs channel for logging."
+  roles_configured: "👥 Permission roles have been configured."
+  
+# Help command
+help:
+  title: "🛡️ Moderation Bot Commands"
+  description: "Here are all available commands:"
+  
+  categories:
+    moderation: "⚔️ Moderation"
+    utility: "🔧 Utility"
+    logging: "📋 Logging"
+    admin: "👑 Admin"
+  
+  footer: "Use /help <command> for detailed information about a specific command."
+
+# Error messages
+errors:
+  missing_permissions: "❌ I don't have the required permissions to perform this action."
+  bot_missing_permissions: "❌ I need the following permissions: {permissions}"
+  command_on_cooldown: "⏰ This command is on cooldown. Try again in {time} seconds."
+  user_on_cooldown: "⏰ You're using commands too quickly. Please wait {time} seconds."
+  database_error: "❌ A database error occurred. Please try again later."
+  invalid_user: "❌ Please provide a valid user."
+  invalid_channel: "❌ Please provide a valid channel."
+  invalid_role: "❌ Please provide a valid role."
+  reason_required: "❌ A reason is required for this action."
+  dm_failed: "⚠️ Could not send DM to user."
+
+# Success messages
+success:
+  database_backup: "✅ Database backup completed successfully."
+  configuration_saved: "✅ Configuration saved successfully."
+  permissions_updated: "✅ Permissions updated successfully."

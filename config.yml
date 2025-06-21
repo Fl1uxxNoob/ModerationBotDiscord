@@ -1,22 +1,96 @@
-# Bot token
-token: "DISCORD_BOT_TOKEN_HERE"
+# Discord Moderation Bot Configuration
 
-# Prefix/messages
-messages:
-  mute_success: "🔇 {member} è stato mutato per {duration}. Motivo: {reason}"
-  kick_success: "👢 {member} è stato espulso. Motivo: {reason}"
-  ban_success: "⛔ {member} è stato bannato per {duration}. Motivo: {reason}"
-  warn_message: "⚠️ {member} hai ricevuto un avvertimento. Motivo: {reason}. Avvertimenti totali: {count}"
-  automod_warn: "⚠️ {member}, linguaggio non consentito! Avvertimento {count}/{max_warns}."
-  automod_mute: "🔇 {member} mutato automaticamente dopo {count} avvertimenti."
+bot:
+  prefix: "!"
+  status: "over the server | /help"
+  owners: [] # List of owner user IDs
+  max_warnings: 3
+  auto_punish_on_max_warnings: true
 
-# Automoderation settings
-automod:
-  banned_words:
-    - "badword1"
-    - "badword2"
-  warn_threshold: 2
+# Database settings
+database:
+  backup_interval: 24 # hours
+  max_history_days: 365 # days to keep history
 
-# Role names
-roles:
-  muted: "Muted"
+# Moderation settings
+moderation:
+  default_ban_delete_days: 1
+  max_timeout_hours: 672 # 28 days maximum
+  require_reason: true
+  dm_on_punishment: true
+  log_channel_name: "mod-logs"
+  
+  # Auto-moderation thresholds
+  spam:
+    enabled: true
+    max_messages: 5
+    time_window: 10 # seconds
+    punishment: "timeout" # timeout, kick, ban
+    duration: 600 # seconds for timeout
+  
+  caps:
+    enabled: true
+    threshold: 0.7 # 70% caps
+    min_length: 10
+    punishment: "warn"
+  
+  repeated_text:
+    enabled: true
+    threshold: 0.8 # 80% similarity
+    punishment: "warn"
+  
+  bad_words:
+    enabled: true
+    punishment: "warn"
+    words: 
+      - "example_bad_word"
+  
+  invite_links:
+    enabled: true
+    punishment: "warn"
+    whitelist: [] # Server IDs to allow invites for
+
+# Logging settings
+logging:
+  enabled: true
+  events:
+    message_delete: true
+    message_edit: true
+    member_join: true
+    member_leave: true
+    member_ban: true
+    member_unban: true
+    role_create: true
+    role_delete: true
+    role_update: true
+    channel_create: true
+    channel_delete: true
+    channel_update: true
+    voice_state_update: true
+    mod_actions: true
+
+# Permission roles
+permissions:
+  admin_roles: [1385905748814594078] # Role IDs with admin permissions
+  moderator_roles: [] # Role IDs with moderator permissions
+  helper_roles: [] # Role IDs with helper permissions
+  
+  # Command permissions
+  commands:
+    ban: ["admin", "moderator"]
+    kick: ["admin", "moderator"]
+    timeout: ["admin", "moderator", "helper"]
+    warn: ["admin", "moderator", "helper"]
+    history: ["admin", "moderator"]
+    purge: ["admin", "moderator"]
+    lock: ["admin", "moderator"]
+    unlock: ["admin", "moderator"]
+
+# Embed colors (hex values)
+colors:
+  success: 0x00ff00
+  error: 0xff0000
+  warning: 0xffff00
+  info: 0x0099ff
+  punishment: 0xff6600
+  log: 0x36393e
