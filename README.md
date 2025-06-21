@@ -449,7 +449,7 @@ The bot needs the following Discord permissions:
 
 ## License
 
-DiscordModeretionBot is licensed under the **GNU General Public License v3.0** (GPL-3.0).  
+ModerationBotDiscord is licensed under the **GNU General Public License v3.0** (GPL-3.0).  
 You are free to use, modify, and distribute this software under the terms of the license.  
 A copy of the license is available in the [LICENSE](./LICENSE) file.
 
